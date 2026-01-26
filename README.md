@@ -28,7 +28,7 @@ This script allows for **manual control**.
    git clone [https://github.com/YOUR_USERNAME/spectra-plotter.git](https://github.com/YOUR_USERNAME/spectra-plotter.git)
    cd spectra-plotter
    ```
-   2. Install dependencies
+2. Install dependencies
    ```bash
    pip install -r requirements.txt
    ```
