@@ -205,3 +205,20 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Python boilerplate
+__pycache__/
+*.pyc
+.venv/
+env/
+dist/
+
+# Project specific ignores
+# Ignore generated plots so they don't clutter the repo
+spectrum_*.png
+*.png
+
+# Ignore data files (optional: comment this out if you WANT to upload example data)
+# *.txt
+# *.dat
+# *.out
