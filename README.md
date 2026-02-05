@@ -25,7 +25,7 @@ This script allows for **manual control**.
 
 1. Clone the repository:
    ```bash
-   git clone [https://github.com/YOUR_USERNAME/spectra-plotter.git](https://github.com/YOUR_USERNAME/spectra-plotter.git)
+   git clone https://github.com/pedro-lara-chem/Spectra_convolution_plot.git
    cd spectra-plotter
    ```
 2. Install dependencies
