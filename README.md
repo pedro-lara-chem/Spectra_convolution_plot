@@ -86,3 +86,5 @@ This script allows for manual control over energy shifting and scaling via comma
 # Run with Lorentzian broadening (0.3 eV) and explicit shifts
 python espectro_convolucionado_manual.py -f lorentzian -w 0.3 -sc 0.5 -sv -0.1
 ```
+## Acknowledgments
+This software was developed by **Pedro Lara Salcedo at Excited States Reactivity Group** at **Universidad Autónoma de Madrid**.  This work was supported by **Diseño y caracterización de nuevos materiales moleculares y optimización de fármacos: Sinergia experimento y teoría$$** under grant number **$$PGC2018-094644-B-C21$$**.
