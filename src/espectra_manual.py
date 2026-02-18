@@ -251,6 +251,7 @@ def load_and_convert_to_eV(filepath):
         intensities = intensities[sort_indices]
         original_indices = original_indices[sort_indices]
     else:
+        print(f"  > Detected 'eV' in {os.path.basename(filepath)}. Converting to nm.")
         energies_eV = energies
         
     return energies_eV, intensities, original_indices
@@ -347,21 +348,17 @@ def create_calculation_grid(all_files_lists, default_fwhm):
     x_axis = np.linspace(final_min_E, final_max_E, 2000)
     return x_axis
 
-def get_plot_limits(exp_files, fallback_axis):
+def get_plot_limits(exp_files):
     """
-    Finds the min/max energy (in eV) across 'exp' files to set
+    Finds the min/max energy (in eV) across files to set
     the final plot limits (the 'zoom').
     Returns: (E_min, E_max)
     """
-    if not exp_files:
-        print("  > No 'exp' files found. Using full calculation grid for plot limits.")
-        return (fallback_axis.min(), fallback_axis.max())
 
     local_min_E = np.inf
     local_max_E = -np.inf
-    found_exp_data = False
 
-    print("  > Setting final plot limits based on 'exp' file(s).")
+    print("  > Setting final plot limits.")
     for filepath in exp_files:
         try:
             energies, _, _ = load_and_convert_to_eV(filepath) 
@@ -369,14 +366,10 @@ def get_plot_limits(exp_files, fallback_axis):
             
             if energies.min() < local_min_E: local_min_E = energies.min()
             if energies.max() > local_max_E: local_max_E = energies.max()
-            found_exp_data = True
         except Exception as e:
             print(f"Error reading {os.path.basename(filepath)} for limits: {e}.")
 
-    if not found_exp_data:
-        print("  > 'exp' files failed to load. Using full calculation grid.")
-        return (fallback_axis.min(), fallback_axis.max())
-
+    print(local_max_E,local_min_E)
     range_eV = local_max_E - local_min_E
     if range_eV == 0:
         padding_eV = 0.1 # default padding for single point
@@ -385,7 +378,7 @@ def get_plot_limits(exp_files, fallback_axis):
     
     E_min_plot = local_min_E - padding_eV
     E_max_plot = local_max_E + padding_eV
-    
+    print(E_max_plot,E_min_plot)
     print(f"  > Final plot 'zoom' set: {E_min_plot:.2f} eV to {E_max_plot:.2f} eV")
     return (E_min_plot, E_max_plot)
 
@@ -417,11 +410,10 @@ def finalize_and_save_plot(fig_tuple, ax_tuple, base_filename, title_suffix, plo
     ax_nm.legend(loc='best', fontsize=10)
     ax_nm.grid(True, linestyle=':', alpha=0.6)
     ax_nm.set_ylim(bottom=0)
-    
-    E_min, E_max = ax_eV.get_xlim()
-    if E_min <= 0.01: E_min = 0.01
-    L_max = H_C_eV_nm / E_min
-    L_min = H_C_eV_nm / E_max
+
+
+    L_max = H_C_eV_nm / plot_eV_limits[0]
+    L_min = H_C_eV_nm / plot_eV_limits[1]
     ax_nm.set_xlim(L_min, L_max)
     fig_nm.tight_layout()
 
@@ -493,8 +485,11 @@ def main():
     x_axis = create_calculation_grid(all_files_lists, fwhm)
     if x_axis is None:
         return
-        
-    plot_eV_limits = get_plot_limits(exp_files, x_axis) 
+    
+    if not exp_files:
+            plot_eV_limits = get_plot_limits(raw_files)
+    else:
+            plot_eV_limits = get_plot_limits(exp_files) 
 
     # 4. Print shift info
     print(f"\nUsing manual shifts: Computed ({manual_shift_eV_comp:+.3f} eV), Vibronic ({manual_shift_eV_vib:+.3f} eV).")
