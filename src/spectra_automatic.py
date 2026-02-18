@@ -218,6 +218,7 @@ def load_and_convert_to_eV(filepath):
         intensities = intensities[sort_indices]
         original_indices = original_indices[sort_indices]
     else:
+        print(f"  > Detected 'eV' in {os.path.basename(filepath)}. Converting to nm.")
         energies_eV = energies
         
     return energies_eV, intensities, original_indices
@@ -386,21 +387,17 @@ def create_calculation_grid(all_files_lists, default_fwhm):
     x_axis = np.linspace(final_min_E, final_max_E, 2000)
     return x_axis
 
-def get_plot_limits(exp_files, fallback_axis):
+def get_plot_limits(exp_files):
     """
-    Finds the min/max energy (in eV) across 'exp' files to set
+    Finds the min/max energy (in eV) across files to set
     the final plot limits (the 'zoom').
     Returns: (E_min, E_max)
     """
-    if not exp_files:
-        print("  > No 'exp' files found. Using full calculation grid for plot limits.")
-        return (fallback_axis.min(), fallback_axis.max())
 
     local_min_E = np.inf
     local_max_E = -np.inf
-    found_exp_data = False
 
-    print("  > Setting final plot limits based on 'exp' file(s).")
+    print("  > Setting final plot limits.")
     for filepath in exp_files:
         try:
             energies, _, _ = load_and_convert_to_eV(filepath) 
@@ -408,14 +405,10 @@ def get_plot_limits(exp_files, fallback_axis):
             
             if energies.min() < local_min_E: local_min_E = energies.min()
             if energies.max() > local_max_E: local_max_E = energies.max()
-            found_exp_data = True
         except Exception as e:
             print(f"Error reading {os.path.basename(filepath)} for limits: {e}.")
 
-    if not found_exp_data:
-        print("  > 'exp' files failed to load. Using full calculation grid.")
-        return (fallback_axis.min(), fallback_axis.max())
-
+    print(local_max_E,local_min_E)
     range_eV = local_max_E - local_min_E
     if range_eV == 0:
         padding_eV = 0.1 # default padding for single point
@@ -424,7 +417,7 @@ def get_plot_limits(exp_files, fallback_axis):
     
     E_min_plot = local_min_E - padding_eV
     E_max_plot = local_max_E + padding_eV
-    
+    print(E_max_plot,E_min_plot)
     print(f"  > Final plot 'zoom' set: {E_min_plot:.2f} eV to {E_max_plot:.2f} eV")
     return (E_min_plot, E_max_plot)
 
@@ -456,10 +449,8 @@ def finalize_and_save_plot(fig_tuple, ax_tuple, base_filename, title_suffix, plo
     ax_nm.grid(True, linestyle=':', alpha=0.6)
     ax_nm.set_ylim(bottom=0)
     
-    E_min, E_max = ax_eV.get_xlim()
-    if E_min <= 0.01: E_min = 0.01
-    L_max = H_C_eV_nm / E_min
-    L_min = H_C_eV_nm / E_max
+    L_max = H_C_eV_nm / plot_eV_limits[0]
+    L_min = H_C_eV_nm / plot_eV_limits[1]
     ax_nm.set_xlim(L_min, L_max)
     fig_nm.tight_layout()
 
@@ -510,7 +501,10 @@ def main():
     if x_axis is None:
         return
         
-    plot_eV_limits = get_plot_limits(exp_files, x_axis) 
+    if not exp_files:
+            plot_eV_limits = get_plot_limits(raw_files)
+    else:
+            plot_eV_limits = get_plot_limits(exp_files) 
 
     # 4. --- NEW: Automatic Shift Calculation ---
     E_peak_exp = get_reference_peak_eV(exp_files)
@@ -741,37 +735,47 @@ def main():
                 ax_ind_nm.plot(x_nm_exp, y_nm_exp, label=label_exp,
                                linestyle='--', linewidth=2.0, zorder=100, color='black')
 
-            ax_ind_eV.plot(x_axis_shifted, normalized_total_spectrum, 
-                           label=label_name, linewidth=2.5, zorder=10,
+            # --- MODIFIED: Plot SCALED spectrum ---
+            ax_ind_eV.plot(x_axis_shifted, scaled_spectrum, 
+                           label=label_eV_scaled, linewidth=2.5, zorder=10,
                            color=line.get_color())
-            ax_ind_eV.fill_between(x_axis_shifted, normalized_total_spectrum, 0,
+            # --- MODIFIED: Fill SCALED area ---
+            ax_ind_eV.fill_between(x_axis_shifted, scaled_spectrum, 0,
                            color=line.get_color(), alpha=0.3, zorder=9)
                            
-            ax_ind_nm.plot(x_plot_nm, y_plot_total_nm_unscaled, 
-                           label=label_name, linewidth=2.5, zorder=10, 
+            # --- MODIFIED: Plot SCALED spectrum (nm) ---
+            ax_ind_nm.plot(x_plot_nm, y_plot_total_nm_scaled, 
+                           label=label_nm_scaled, linewidth=2.5, zorder=10, 
                            color=line.get_color())
-            ax_ind_nm.fill_between(x_plot_nm, y_plot_total_nm_unscaled, 0,
+            # --- MODIFIED: Fill SCALED area (nm) ---
+            ax_ind_nm.fill_between(x_plot_nm, y_plot_total_nm_scaled, 0,
                            color=line.get_color(), alpha=0.3, zorder=9)
 
+            # --- MODIFIED: Plot SCALED deconvoluted peaks ---
             for i, (peak, label, E_max_eV, f_max) in enumerate(deconvoluted_peaks):
                 deconv_label = None 
-                peak_color = f'C{i+1}' 
+                peak_color = f'C{i+1}' # Get a new color (C1, C2, etc.)
                 
-                ax_ind_eV.plot(x_axis_shifted, peak,
+                # --- NEW: Apply scaling to peak and max height ---
+                # We scale the *normalized* peak for the deconvolution plot
+                scaled_peak = (peak / max_val) * scale_factor
+                scaled_f_max = (f_max / max_val) * scale_factor
+                
+                ax_ind_eV.plot(x_axis_shifted, scaled_peak,
                                linestyle='--', linewidth=1.0, 
                                label=deconv_label, zorder=5, color=peak_color)
-                ax_ind_eV.fill_between(x_axis_shifted, peak, 0,
+                ax_ind_eV.fill_between(x_axis_shifted, scaled_peak, 0,
                                 color=peak_color, alpha=0.3, zorder=4)
                 
                 E_max_shifted = E_max_eV + shift_eV
                 ax_ind_eV.annotate(label,
-                             xy=(E_max_shifted, f_max), 
-                             xytext=(E_max_shifted, f_max * 1.05),
+                             xy=(E_max_shifted, scaled_f_max), 
+                             xytext=(E_max_shifted, scaled_f_max * 1.05),
                              textcoords='data', color=peak_color,
                              fontsize=9, fontweight='bold',
                              ha='center', va='bottom', zorder=6)
                 
-                y_plot_peak_nm = (peak)[sort_idx_nm] 
+                y_plot_peak_nm = (scaled_peak)[sort_idx_nm] 
                 ax_ind_nm.plot(x_plot_nm, y_plot_peak_nm,
                          linestyle='--', linewidth=1.0, label=deconv_label,
                          zorder=5, color=peak_color)
@@ -780,8 +784,8 @@ def main():
 
                 E_max_nm_shifted = H_C_eV_nm / E_max_shifted
                 ax_ind_nm.annotate(label,
-                             xy=(E_max_nm_shifted, f_max),
-                             xytext=(E_max_nm_shifted, f_max * 1.05),
+                             xy=(E_max_nm_shifted, scaled_f_max),
+                             xytext=(E_max_nm_shifted, scaled_f_max * 1.05),
                              textcoords='data', color=peak_color,
                              fontsize=9, fontweight='bold',
                              ha='center', va='bottom', zorder=6)
@@ -1058,3 +1062,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
