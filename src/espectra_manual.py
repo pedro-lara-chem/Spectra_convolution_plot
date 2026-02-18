@@ -369,7 +369,6 @@ def get_plot_limits(exp_files):
         except Exception as e:
             print(f"Error reading {os.path.basename(filepath)} for limits: {e}.")
 
-    print(local_max_E,local_min_E)
     range_eV = local_max_E - local_min_E
     if range_eV == 0:
         padding_eV = 0.1 # default padding for single point
