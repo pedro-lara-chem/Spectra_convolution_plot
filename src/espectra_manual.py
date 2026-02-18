@@ -377,7 +377,6 @@ def get_plot_limits(exp_files):
     
     E_min_plot = local_min_E - padding_eV
     E_max_plot = local_max_E + padding_eV
-    print(E_max_plot,E_min_plot)
     print(f"  > Final plot 'zoom' set: {E_min_plot:.2f} eV to {E_max_plot:.2f} eV")
     return (E_min_plot, E_max_plot)
 
