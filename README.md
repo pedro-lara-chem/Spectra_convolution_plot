@@ -44,15 +44,15 @@ The scripts categorize files based on their filenames:
 *  Other: Treated as Raw Computed (Stick) spectra (Energy vs Osc. Strength). These will be convoluted.
 ## Running the automatic aligner
 ```bash
-python espectro_generator_automatic.py --func gaussian --fwhm 0.2
+python spectra_automatic.py --func gaussian --fwhm 0.2
 ```
 ## Running the manual plotter
 ```bash
 # Example: Gaussian broadening with 0.3 eV FWHM
-python espectro_convolucionado_manual.py -f gaussian -w 0.3
+python espectra_manual.py -f gaussian -w 0.3
 
 # Example: Pre-define shifts (0.5 eV for computed, -0.1 for vibronic)
-python espectro_convolucionado_manual.py -sc 0.5 -sv -0.1
+python espectra_manual.py -sc 0.5 -sv -0.1
 ```
 ## Command Line Arguments
 
@@ -68,7 +68,7 @@ This script automatically aligns computed spectra to the experimental reference.
 
 **Example:**
 ```bash
-python espectro_generator_automatic.py -f lorentzian -w 0.3
+python spectra_automatic.py -f lorentzian -w 0.3
 ```
 ### Manual Script Arguments (`espectro_convolucionado_manual.py`)
 
@@ -84,7 +84,7 @@ This script allows for manual control over energy shifting and scaling via comma
 **Example Usage:**
 ```bash
 # Run with Lorentzian broadening (0.3 eV) and explicit shifts
-python espectro_convolucionado_manual.py -f lorentzian -w 0.3 -sc 0.5 -sv -0.1
+python espectra_manual.py -f lorentzian -w 0.3 -sc 0.5 -sv -0.1
 ```
 ## Acknowledgments
 This software was developed by **Pedro Lara Salcedo at Excited States Reactivity Group** at **Universidad Autónoma de Madrid**.  This work was supported by **Diseño y caracterización de nuevos materiales moleculares y optimización de fármacos: Sinergia experimento y teoría$$** under grant number **$$PGC2018-094644-B-C21$$**.
